@@ -1,5 +1,7 @@
 # cli-anything-ones
 
+[中文文档](README.zh-CN.md)
+
 Read-only CLI-Anything harness for reading ONES issues and attachments from coding agents.
 
 ## What It Does
