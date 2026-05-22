@@ -31,11 +31,19 @@ The command installs the `cli-anything-ones` executable.
 
 ## Environment
 
-`ONES_ACCESS_TOKEN` is required for commands that call ONES APIs:
+An ONES access token is required for commands that call ONES APIs. You can export it for the current shell:
 
 ```bash
 export ONES_ACCESS_TOKEN=...
 ```
+
+Or save it to the local CLI config file:
+
+```bash
+cli-anything-ones config set-token
+```
+
+The saved token is stored at `~/.config/cli-anything-ones/config.json` with private file permissions. `ONES_ACCESS_TOKEN` takes precedence over the saved token when both are set.
 
 Optional settings:
 
@@ -53,6 +61,7 @@ cli-anything-ones issue parse "https://ones.cn/project/#/team/HbudLR1b/project/J
 cli-anything-ones issue get "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218"
 cli-anything-ones issue get "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --json
 cli-anything-ones attachment download "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --output-dir /tmp/ones --json
+cli-anything-ones config set-token
 cli-anything-ones doctor --json
 ```
 
@@ -61,8 +70,9 @@ For programmatic agent use, prefer `--json`.
 ## Safety
 
 - This CLI is read-only.
-- Tokens are read only from `ONES_ACCESS_TOKEN`.
+- Tokens are read from `ONES_ACCESS_TOKEN` or the local CLI config file.
 - Tokens are never accepted as command-line arguments or printed by `doctor`.
+- `config set-token` prompts with hidden input by default and writes the config file with `0600` permissions.
 - Temporary attachment URLs are hidden by default. Use `--include-attachment-urls` only when needed.
 - Attachment downloads are restricted to ONES hosts unless `--allow-external-attachment-hosts` is explicitly provided.
 

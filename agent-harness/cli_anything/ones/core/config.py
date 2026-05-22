@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -13,6 +14,59 @@ class OnesConfig:
     api_base_url: str
     team_id: str
     token: str | None
+
+
+def config_file_path() -> str:
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    if xdg_config_home:
+        root = os.path.expanduser(xdg_config_home)
+    else:
+        root = os.path.join(os.path.expanduser("~"), ".config")
+    return os.path.join(root, "cli-anything-ones", "config.json")
+
+
+def load_local_config() -> dict:
+    path = config_file_path()
+    try:
+        with open(path, encoding="utf-8") as config_file:
+            data = json.load(config_file)
+    except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError as error:
+        raise UsageError(f"Invalid local config file {path}: {error.msg}") from error
+
+    if not isinstance(data, dict):
+        raise UsageError(f"Invalid local config file {path}: expected a JSON object.")
+    return data
+
+
+def save_access_token(token: str) -> str:
+    token = token.strip()
+    if not token:
+        raise UsageError("ONES_ACCESS_TOKEN cannot be empty.")
+
+    path = config_file_path()
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    data = load_local_config()
+    data["onesAccessToken"] = token
+
+    tmp_path = f"{path}.tmp"
+    fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as config_file:
+        json.dump(data, config_file, ensure_ascii=False, indent=2)
+        config_file.write("\n")
+    os.replace(tmp_path, path)
+    os.chmod(path, 0o600)
+    return path
+
+
+def saved_access_token() -> str | None:
+    token = load_local_config().get("onesAccessToken")
+    if token is None:
+        return None
+    if not isinstance(token, str):
+        raise UsageError("Invalid local config: onesAccessToken must be a string.")
+    return token.strip() or None
 
 
 def resolve_config(parsed, require_token=True) -> OnesConfig:
@@ -31,9 +85,11 @@ def resolve_config(parsed, require_token=True) -> OnesConfig:
         raise UsageError("ONES_TEAM_ID is required because no team ID was found in the URL.")
 
     token = os.environ.get("ONES_ACCESS_TOKEN")
+    if not token and require_token:
+        token = saved_access_token()
     if require_token and not token:
         raise UsageError(
-            "ONES_ACCESS_TOKEN is required. Create a read-only ONES OpenAPI token and export it before running this command."
+            "ONES_ACCESS_TOKEN is required. Create a read-only ONES OpenAPI token and export it or run `cli-anything-ones config set-token`."
         )
 
     return OnesConfig(
@@ -91,8 +147,17 @@ def is_trusted_ones_host(hostname: str) -> bool:
 
 def doctor_payload() -> dict:
     base_url = os.environ.get("ONES_BASE_URL")
+    env_token = os.environ.get("ONES_ACCESS_TOKEN")
+    local_token = saved_access_token()
+    token_source = None
+    if env_token:
+        token_source = "environment"
+    elif local_token:
+        token_source = "local_config"
     return {
-        "tokenConfigured": bool(os.environ.get("ONES_ACCESS_TOKEN")),
+        "tokenConfigured": bool(env_token or local_token),
+        "tokenSource": token_source,
+        "configFile": config_file_path(),
         "baseURL": base_url,
         "teamID": os.environ.get("ONES_TEAM_ID"),
         "baseURLTrusted": _base_url_trusted(base_url) if base_url else None,

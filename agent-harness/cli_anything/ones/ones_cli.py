@@ -7,7 +7,7 @@ import click
 from . import __version__
 from .core.api import OnesClient
 from .core.attachments import download_attachments
-from .core.config import doctor_payload, resolve_config
+from .core.config import doctor_payload, resolve_config, save_access_token
 from .core.errors import ApiError, UsageError
 from .core.formatting import print_payload
 from .core.issues import DEFAULT_MAX_PAGES, fetch_issue, validate_max_pages
@@ -145,6 +145,23 @@ def attachment_download(
         click.echo(f"{item['name']}: {item['path']}")
 
 
+@cli.group("config")
+def config_group():
+    """Manage local CLI configuration."""
+
+
+@config_group.command("set-token")
+@click.option("--stdin", "read_stdin", is_flag=True, help="Read token from stdin.")
+def config_set_token(read_stdin):
+    """Save ONES_ACCESS_TOKEN to the local CLI config file."""
+    if read_stdin:
+        token = sys.stdin.read().strip()
+    else:
+        token = click.prompt("ONES_ACCESS_TOKEN", hide_input=True).strip()
+    path = save_access_token(token)
+    click.echo(f"Saved ONES_ACCESS_TOKEN to {path}")
+
+
 @cli.command()
 @click.option("--json", "json_output", is_flag=True, help="Output JSON.")
 def doctor(json_output):
@@ -154,6 +171,8 @@ def doctor(json_output):
         click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
         return
     click.echo(f"ONES_ACCESS_TOKEN: {'set' if payload['tokenConfigured'] else 'missing'}")
+    click.echo(f"Token source: {payload['tokenSource'] or '-'}")
+    click.echo(f"Config file: {payload['configFile']}")
     click.echo(f"ONES_BASE_URL: {payload['baseURL'] or '-'}")
     click.echo(f"ONES_TEAM_ID: {payload['teamID'] or '-'}")
 

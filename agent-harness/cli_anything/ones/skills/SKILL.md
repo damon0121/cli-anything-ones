@@ -7,9 +7,9 @@ description: Use when reading ONES bug or issue URLs from any project through th
 
 Use `cli-anything-ones` to parse ONES issue URLs, read issue details, and download attachments.
 
-## Required Environment
+## Required Configuration
 
-`ONES_ACCESS_TOKEN` must be set for commands that call ONES APIs.
+An ONES access token must be configured for commands that call ONES APIs. Prefer an existing `ONES_ACCESS_TOKEN` environment variable; otherwise use `cli-anything-ones config set-token`.
 
 Optional environment variables:
 
@@ -23,6 +23,7 @@ cli-anything-ones issue parse "<ONES issue URL>" --json
 cli-anything-ones issue get "<ONES issue URL>" --json
 cli-anything-ones issue get "<ONES issue URL>" --format markdown
 cli-anything-ones attachment download "<ONES issue URL>" --output-dir /tmp/ones --json
+cli-anything-ones config set-token
 cli-anything-ones doctor --json
 ```
 

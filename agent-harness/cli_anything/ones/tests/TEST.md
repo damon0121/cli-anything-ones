@@ -7,12 +7,14 @@
 - Untrusted issue URL rejection before network discovery.
 - Attachment URL host validation and filename sanitization.
 - Attachment redirect target validation.
+- Saved token configuration and precedence.
 - Markdown-safe formatting helpers.
 
 ## E2E Tests
 
 - CLI help can be executed as a subprocess.
 - `issue parse --json` can be executed as a subprocess without `ONES_ACCESS_TOKEN`.
+- `config set-token --stdin` saves a local token that `doctor --json` can detect.
 
 Live ONES API tests require a real `ONES_ACCESS_TOKEN` and are intentionally not part of the default test suite to avoid leaking credentials in CI logs.
 
@@ -27,7 +29,7 @@ uv run --python python3.11 --with pytest --with click python -m pytest cli_anyth
 Result:
 
 ```text
-11 passed in 0.45s
+17 passed in 0.55s
 ```
 
 ## Live Smoke Results

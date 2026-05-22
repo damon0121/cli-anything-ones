@@ -1,4 +1,6 @@
 import json
+import os
+import stat
 from urllib.error import HTTPError
 
 import pytest
@@ -8,7 +10,12 @@ from cli_anything.ones.core.attachments import (
     _safe_filename,
     _validate_attachment_url,
 )
-from cli_anything.ones.core.config import is_trusted_ones_host, resolve_config
+from cli_anything.ones.core.config import (
+    doctor_payload,
+    is_trusted_ones_host,
+    resolve_config,
+    save_access_token,
+)
 from cli_anything.ones.core.errors import UsageError
 from cli_anything.ones.core.formatting import format_bytes
 from cli_anything.ones.core.parse import parse_ones_issue_url
@@ -65,6 +72,60 @@ def test_resolve_config_rejects_untrusted_origin_before_network(monkeypatch):
         resolve_config(parsed, require_token=False)
 
     assert called is False
+
+
+def test_resolve_config_uses_saved_token(monkeypatch, tmp_path):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    monkeypatch.setenv("ONES_BASE_URL", "https://sz.ones.cn")
+    monkeypatch.delenv("ONES_ACCESS_TOKEN", raising=False)
+    save_access_token("saved-token")
+
+    config = resolve_config(parse_ones_issue_url(URL), require_token=True)
+
+    assert config.token == "saved-token"
+
+
+def test_resolve_config_without_token_ignores_saved_config(monkeypatch, tmp_path):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    monkeypatch.setenv("ONES_BASE_URL", "https://sz.ones.cn")
+    monkeypatch.delenv("ONES_ACCESS_TOKEN", raising=False)
+    config_path = tmp_path / "cli-anything-ones" / "config.json"
+    config_path.parent.mkdir()
+    config_path.write_text("{", encoding="utf-8")
+
+    config = resolve_config(parse_ones_issue_url(URL), require_token=False)
+
+    assert config.token is None
+
+
+def test_environment_token_overrides_saved_token(monkeypatch, tmp_path):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    monkeypatch.setenv("ONES_BASE_URL", "https://sz.ones.cn")
+    save_access_token("saved-token")
+    monkeypatch.setenv("ONES_ACCESS_TOKEN", "env-token")
+
+    config = resolve_config(parse_ones_issue_url(URL), require_token=True)
+
+    assert config.token == "env-token"
+
+
+def test_save_access_token_uses_private_file_permissions(monkeypatch, tmp_path):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+
+    path = save_access_token("saved-token")
+
+    assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
+
+
+def test_doctor_reports_saved_token_source(monkeypatch, tmp_path):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    monkeypatch.delenv("ONES_ACCESS_TOKEN", raising=False)
+    save_access_token("saved-token")
+
+    payload = doctor_payload()
+
+    assert payload["tokenConfigured"] is True
+    assert payload["tokenSource"] == "local_config"
 
 
 def test_attachment_url_validation_rejects_untrusted_hosts():
