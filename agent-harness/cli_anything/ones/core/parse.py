@@ -14,7 +14,7 @@ class ParsedIssueUrl:
     component_id: str | None
     sprint_id: str | None
     issue_type_id: str | None
-    issue_key: str
+    issue_key: str | None
     issue_number: int | None
     project_key: str | None
 
@@ -34,9 +34,18 @@ class ParsedIssueUrl:
 
 
 def parse_ones_issue_url(value: str) -> ParsedIssueUrl:
+    parsed = parse_ones_url(value)
+    if not parsed.issue_key:
+        raise UsageError(
+            "Could not find issue key in URL. Expected a segment like /issue/JHWX-10218."
+        )
+    return parsed
+
+
+def parse_ones_url(value: str) -> ParsedIssueUrl:
     parsed = urlparse(value)
     if not parsed.scheme or not parsed.netloc:
-        raise UsageError(f"Invalid ONES issue URL: {value}")
+        raise UsageError(f"Invalid ONES URL: {value}")
 
     hash_path = parsed.fragment[1:] if parsed.fragment.startswith("/") else parsed.fragment
     candidate_path = hash_path or parsed.path
@@ -44,18 +53,11 @@ def parse_ones_issue_url(value: str) -> ParsedIssueUrl:
     issue_key = _value_after(segments, "issue")
     project_id = _value_after(segments, "project")
 
-    if not issue_key:
-        raise UsageError(
-            "Could not find issue key in URL. Expected a segment like /issue/JHWX-10218."
-        )
-
-    issue_number_match = re.search(r"-(\d+)$", issue_key)
+    issue_number_match = re.search(r"-(\d+)$", issue_key or "")
     issue_number = int(issue_number_match.group(1)) if issue_number_match else None
-    project_key = (
-        issue_key[: -len(issue_number_match.group(1)) - 1]
-        if issue_number_match
-        else project_id
-    )
+    project_key = project_id
+    if issue_key and issue_number_match:
+        project_key = issue_key[: -len(issue_number_match.group(1)) - 1]
 
     return ParsedIssueUrl(
         origin=f"{parsed.scheme}://{parsed.netloc}",

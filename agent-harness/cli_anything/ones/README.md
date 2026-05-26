@@ -30,6 +30,10 @@ export ONES_TEAM_ID=HbudLR1b
 
 ```bash
 cli-anything-ones issue parse "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --exclude-status 关闭 --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --mine --exclude-status 关闭 --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --assignee-id Uu13cX5m --json
 cli-anything-ones issue get "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218"
 cli-anything-ones issue get "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --json
 cli-anything-ones attachment download "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --output-dir /tmp/ones

@@ -9,6 +9,7 @@
 ## 功能
 
 - 解析 ONES 工单 URL。
+- 从团队、项目或工单 URL 获取工作项列表。
 - 读取工单详情、评论、自定义字段和附件元数据。
 - 在诊断问题时下载工单附件。
 - 提供 OpenCode skill：`skills/cli-anything-ones`。
@@ -84,6 +85,18 @@ export ONES_TEAM_ID=HbudLR1b
 ```bash
 cli-anything-ones issue parse "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --json
 ```
+
+获取项目工作项列表：
+
+```bash
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --exclude-status 关闭 --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --mine --exclude-status 关闭 --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --assignee-id Uu13cX5m --json
+```
+
+`--exclude-status` 可以按状态名称或状态 ID 排除工作项，也可以重复传入多个状态。
+`--mine` 会通过 OpenAPI `/oauth2/introspect` 解析当前 token 对应的用户 ID；也可以用 `--assignee-id` 手动指定负责人。
 
 读取工单详情：
 

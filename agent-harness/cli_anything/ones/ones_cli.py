@@ -6,12 +6,20 @@ import click
 
 from . import __version__
 from .core.api import OnesClient
+from .core.auth import current_user_id
 from .core.attachments import download_attachments
 from .core.config import doctor_payload, resolve_config, save_access_token
 from .core.errors import ApiError, UsageError
 from .core.formatting import print_payload
-from .core.issues import DEFAULT_MAX_PAGES, fetch_issue, validate_max_pages
-from .core.parse import parse_ones_issue_url
+from .core.issues import (
+    DEFAULT_ISSUE_LIST_LIMIT,
+    DEFAULT_MAX_PAGES,
+    fetch_issue,
+    fetch_issue_list,
+    validate_issue_list_limit,
+    validate_max_pages,
+)
+from .core.parse import parse_ones_issue_url, parse_ones_url
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -42,6 +50,89 @@ def issue_parse(url, json_output, output_format):
     config = resolve_config(parsed, require_token=False)
     payload = {**parsed.to_dict(), "baseURL": config.base_url, "teamID": config.team_id}
     click.echo(print_payload(payload, output_format), nl=False)
+
+
+@issue.command("list")
+@click.argument("url")
+@click.option("--json", "json_output", is_flag=True, help="Output JSON.")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["markdown", "json"]),
+    default="markdown",
+    show_default=True,
+)
+@click.option("--project-id", help="Filter by project ID. Defaults to URL project ID.")
+@click.option("--component-id", help="Filter by component ID. Defaults to URL component ID.")
+@click.option("--sprint-id", help="Filter by sprint ID. Defaults to URL sprint ID.")
+@click.option(
+    "--issue-type-id",
+    help="Filter by issue type ID. Defaults to URL issue type ID.",
+)
+@click.option(
+    "--exclude-status",
+    "exclude_statuses",
+    multiple=True,
+    help="Exclude issues whose status name or ID matches this value. Can be repeated.",
+)
+@click.option("--assignee-id", help="Filter by assignee user ID.")
+@click.option(
+    "--mine",
+    is_flag=True,
+    help="Filter by the current ONES_ACCESS_TOKEN user.",
+)
+@click.option(
+    "--limit",
+    default=DEFAULT_ISSUE_LIST_LIMIT,
+    show_default=True,
+    type=int,
+    help="Max issues to return.",
+)
+@click.option(
+    "--max-pages",
+    default=DEFAULT_MAX_PAGES,
+    show_default=True,
+    type=int,
+    help="Max pagination pages.",
+)
+def issue_list(
+    url,
+    json_output,
+    output_format,
+    project_id,
+    component_id,
+    sprint_id,
+    issue_type_id,
+    exclude_statuses,
+    assignee_id,
+    mine,
+    limit,
+    max_pages,
+):
+    """List ONES issues from a team, project, or issue URL."""
+    output_format = _resolve_output_format(json_output, output_format)
+    limit = validate_issue_list_limit(limit)
+    max_pages = validate_max_pages(max_pages)
+    parsed = parse_ones_url(url)
+    if mine and assignee_id:
+        raise UsageError("Use either --mine or --assignee-id, not both.")
+    config = resolve_config(parsed, require_token=True)
+    if mine:
+        assignee_id = current_user_id(config)
+    report = fetch_issue_list(
+        OnesClient(config),
+        config,
+        parsed,
+        project_id=project_id,
+        component_id=component_id,
+        sprint_id=sprint_id,
+        issue_type_id=issue_type_id,
+        assignee_id=assignee_id,
+        exclude_statuses=exclude_statuses,
+        limit=limit,
+        max_pages=max_pages,
+    )
+    click.echo(print_payload(report, output_format), nl=False)
 
 
 @issue.command("get")

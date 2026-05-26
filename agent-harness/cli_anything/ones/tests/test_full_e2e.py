@@ -46,6 +46,14 @@ class TestCliSubprocess:
         assert payload["issueKey"] == "JHWX-10218"
         assert payload["teamID"] == "HbudLR1b"
 
+    def test_issue_list_help(self):
+        result = self._run(["issue", "list", "--help"])
+
+        assert "List ONES issues" in result.stdout
+        assert "--exclude-status" in result.stdout
+        assert "--assignee-id" in result.stdout
+        assert "--mine" in result.stdout
+
     def test_config_set_token_from_stdin(self, tmp_path):
         env = {"XDG_CONFIG_HOME": str(tmp_path), "ONES_ACCESS_TOKEN": ""}
 

@@ -3,6 +3,13 @@
 ## Unit Tests
 
 - URL parsing for ONES hash URLs.
+- Project URL parsing for list commands without requiring an issue key.
+- Issue-list pagination and summary normalization.
+- Issue-list projectID fallback and client-side sprint filtering.
+- Issue-list status exclusion by status name or ID while continuing pagination.
+- Issue-list assignee filtering while continuing pagination.
+- Issue-list limit validation.
+- Current OpenAPI token user resolution via `/oauth2/introspect`.
 - Trusted host checks for ONES SaaS hosts.
 - Untrusted issue URL rejection before network discovery.
 - Attachment URL host validation and filename sanitization.
@@ -14,6 +21,7 @@
 
 - CLI help can be executed as a subprocess.
 - `issue parse --json` can be executed as a subprocess without `ONES_ACCESS_TOKEN`.
+- `issue list --help` can be executed as a subprocess without `ONES_ACCESS_TOKEN`.
 - `config set-token --stdin` saves a local token that `doctor --json` can detect.
 
 Live ONES API tests require a real `ONES_ACCESS_TOKEN` and are intentionally not part of the default test suite to avoid leaking credentials in CI logs.
@@ -29,7 +37,7 @@ uv run --python python3.11 --with pytest --with click python -m pytest cli_anyth
 Result:
 
 ```text
-17 passed in 0.55s
+27 passed in 0.70s
 ```
 
 ## Live Smoke Results

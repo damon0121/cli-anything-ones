@@ -12,6 +12,7 @@ This harness exposes a read-only, agent-friendly CLI for ONES work items.
 ## Commands
 
 - `cli-anything-ones issue parse <url>` parses an ONES issue URL.
+- `cli-anything-ones issue list <url>` lists issues from a team, project, or issue URL. Use `--exclude-status <name-or-id>` to omit statuses, `--mine` for the current token user, or `--assignee-id <user-id>` for a specific assignee.
 - `cli-anything-ones issue get <url>` reads issue detail, comments, attachments, and field metadata.
 - `cli-anything-ones attachment download <url> --output-dir <dir>` downloads issue attachments.
 - `cli-anything-ones config set-token` saves the ONES access token to the local CLI config file.

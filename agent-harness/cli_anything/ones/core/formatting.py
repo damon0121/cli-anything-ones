@@ -4,6 +4,8 @@ import json
 def print_payload(payload, output_format):
     if output_format == "json":
         return f"{json.dumps(payload, ensure_ascii=False, indent=2)}\n"
+    if "issues" in payload:
+        return format_issue_list_markdown(payload)
     if "issue" in payload:
         return format_issue_markdown(payload)
     return format_parse_only(payload)
@@ -48,6 +50,28 @@ def format_issue_markdown(report):
     return "\n".join(lines) + "\n"
 
 
+def format_issue_list_markdown(report):
+    source = report["source"]
+    lines = ["# ONES 工作项列表", ""]
+    lines.extend(
+        [
+            f"- teamID: {source.get('teamID')}",
+            f"- projectID: {source.get('projectID') or '-'}",
+            f"- componentID: {source.get('componentID') or '-'}",
+            f"- sprintID: {source.get('sprintID') or '-'}",
+            f"- issueTypeID: {source.get('issueTypeID') or '-'}",
+            f"- assigneeID: {source.get('assigneeID') or '-'}",
+            f"- count: {report.get('pageInfo', {}).get('count', 0)}",
+            f"- hasMore: {str(report.get('pageInfo', {}).get('hasMore', False)).lower()}",
+            "",
+        ]
+    )
+    _section(lines, "工作项", _format_issue_list(report.get("issues") or []))
+    if report.get("warnings"):
+        _section(lines, "读取警告", "\n".join(f"- {warning}" for warning in report["warnings"]))
+    return "\n".join(lines) + "\n"
+
+
 def _section(lines, title, content):
     lines.extend([f"## {title}", "", content or "-", ""])
 
@@ -86,6 +110,26 @@ def _format_attachments(attachments):
         if attachment.get("tempURL"):
             line = f"{line}\n  URL: {attachment['tempURL']}"
         lines.append(line)
+    return "\n".join(lines)
+
+
+def _format_issue_list(issues):
+    if not issues:
+        return "-"
+    lines = []
+    for issue in issues:
+        key = issue.get("key") or issue.get("id") or "-"
+        title = issue.get("title") or ""
+        meta = ", ".join(
+            item
+            for item in (
+                _name(issue.get("status")),
+                _name(issue.get("assignee")),
+                _name(issue.get("issueType")),
+            )
+            if item and item != "-"
+        )
+        lines.append(f"- {key} {title}{f' ({meta})' if meta else ''}".rstrip())
     return "\n".join(lines)
 
 

@@ -7,6 +7,7 @@ Read-only CLI-Anything harness for reading ONES issues and attachments from codi
 ## What It Does
 
 - Parses ONES issue URLs.
+- Lists ONES issues from a team, project, or issue URL.
 - Reads issue details, comments, custom fields, and attachments.
 - Downloads issue attachments when needed for diagnosis.
 - Exposes an agent skill under `skills/cli-anything-ones`.
@@ -60,6 +61,10 @@ export ONES_TEAM_ID=HbudLR1b
 
 ```bash
 cli-anything-ones issue parse "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --exclude-status 关闭 --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --mine --exclude-status 关闭 --json
+cli-anything-ones issue list "https://ones.cn/project/#/team/HbudLR1b/project/JHWX" --assignee-id Uu13cX5m --json
 cli-anything-ones issue get "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218"
 cli-anything-ones issue get "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --json
 cli-anything-ones attachment download "https://ones.cn/project/#/team/HbudLR1b/project/JHWX/issue/JHWX-10218" --output-dir /tmp/ones --json
@@ -67,7 +72,7 @@ cli-anything-ones config set-token
 cli-anything-ones doctor --json
 ```
 
-For programmatic agent use, prefer `--json`.
+For programmatic agent use, prefer `--json`. `--mine` resolves the current user through the OpenAPI `/oauth2/introspect` endpoint.
 
 ## Safety
 
